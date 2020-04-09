@@ -7,3 +7,4 @@ cp -r $GOPATH/src/github.com/GitofTruth/GoT/profiles .gotconfig
 
 #creating wallet
 sudo got-wallet add acme Admin
+
