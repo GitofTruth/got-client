@@ -23,6 +23,8 @@
   },
   "homepage": "https://github.com/GitofTruth/got-client#readme",
   "dependencies": {
-    "fabric-network": "^1.4.7"
+    "fabric-network": "^1.4.7",
+    "gitlog": "^3.2.0",
+    "simple-git": "^1.132.0"
   }
 }
