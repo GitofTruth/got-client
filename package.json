@@ -4,9 +4,9 @@
   "description": "provides client interface with GoT",
   "main": "index.js",
   "bin": {
-    "got-client": "./lib/got-client.js",
-    "got-wallet": "./lib/wallet.js",
-    "got-init": "./hooks/got-init.sh"
+    "got-client": "./index.js",
+    "got-wallet": "./lib/common/wallet.js",
+    "got-init": "./lib/common/got-init.sh"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -30,6 +30,7 @@
     "ipfs-http-client": "^43.0.1",
     "is-stream": "^2.0.0",
     "save-file": "^2.3.1",
+    "shelljs": "^0.8.4",
     "simple-git": "^1.132.0"
   }
 }
