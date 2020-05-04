@@ -39,7 +39,9 @@ async function main(){
     network = await gateway.getNetwork(Constants.NETWORK_NAME);
     contract = await network.getContract(Constants.CONTRACT_ID);
 
+    console.log("BEFORE CREATE CLIENT")
     var client = new gotClient.Client(contract);
+    console.log("AFTER CREATE CLIENT")
     await client.loadCurrentRepo();
 
     let branchName = client.GotReader.getCurrentBranchName();
@@ -49,6 +51,7 @@ async function main(){
   
     switch (process.argv[2]) {
       case "addRepo":
+        console.log("HERE ADDING Repo");
         await simpleGit.push("origin", branchName);
         await client.addRepo();
         
