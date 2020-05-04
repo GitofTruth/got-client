@@ -8,6 +8,10 @@ const { Gateway, FileSystemWallet, DefaultEventHandlerStrategies, Transaction  }
 const gotClient = require('./lib/client')
 const Constants = require('./lib/common/constants')
 
+const simpleGit = require('simple-git/promise')(Constants.REPO_PATH);
+
+
+
 var gateway, network, contract;
 
 async function setupGateway(){
@@ -30,18 +34,24 @@ async function setupGateway(){
 
 async function main(){
     gateway = new Gateway();
+
     await setupGateway();
     network = await gateway.getNetwork(Constants.NETWORK_NAME);
     contract = await network.getContract(Constants.CONTRACT_ID);
 
     var client = new gotClient.Client(contract);
     await client.loadCurrentRepo();
+
+    let branchName = client.GotReader.getCurrentBranchName();
+
   
     console.log("entered command: ", process.argv[2])
   
     switch (process.argv[2]) {
       case "addRepo":
+        await simpleGit.push("origin", branchName);
         await client.addRepo();
+        
         break;
       
       case "testUser":
@@ -143,6 +153,7 @@ async function main(){
       case "clone":
         // TO DO : check number of arguments
         await client.cloneRepo(process.argv[3], process.argv[4]);
+        await simpleGit.pull("origin", branchName);
         break;
   
       default:

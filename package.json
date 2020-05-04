@@ -24,11 +24,13 @@
   "homepage": "https://github.com/GitofTruth/got-client#readme",
   "dependencies": {
     "bl": "^4.0.2",
+    "current-git-branch": "^1.1.0",
     "fabric-network": "^1.4.7",
     "gitlog": "^3.2.0",
     "ipfs-cluster-api": "0.0.9",
     "ipfs-http-client": "^43.0.1",
     "is-stream": "^2.0.0",
+    "js-yaml": "^3.13.1",
     "save-file": "^2.3.1",
     "shelljs": "^0.8.4",
     "simple-git": "^1.132.0"
