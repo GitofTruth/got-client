@@ -45,7 +45,7 @@ async function main(){
     await client.loadCurrentRepo();
 
     let branchName = client.GotReader.getCurrentBranchName();
-
+     
   
     console.log("entered command: ", process.argv[2])
   
