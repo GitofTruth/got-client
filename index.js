@@ -51,9 +51,43 @@ async function main(){
   
     switch (process.argv[2]) {
       case "addRepo":
-        console.log("HERE ADDING Repo");
         await simpleGit.push("origin", branchName);
         await client.addRepo();
+        break;
+        
+      case "clone":
+        // TO DO : check number of arguments
+        await client.cloneRepo(process.argv[3], process.argv[4]);
+        await simpleGit.pull("origin", branchName);
+        break;
+
+      case "push":
+        await client.push();
+        break;
+  
+      case "pull":
+        await client.pull();
+        break;
+
+      case "testOne":
+        //creating users
+        console.log("Testing Adding Users and Repo")
+        await client.createNewUser("User01", "PP", "PP")
+        await client.createNewUser("User02", "PP", "PP")
+        await client.createNewUser("Admin01", "PP", "PP")
+        await client.createNewUser("Admin02", "PP", "PP")
+        console.log("\n\n")
+
+        console.log("Testing Adding a New Repo")
+        await client.createNewUser("Admin@acme.com", "PP", "PP")
+        await client.addRepo()
+        await client.updateUserAccess("Admin01", gotClient.UserAccess.CollaboratorAccess, "enc2")
+        await client.queryCurrentEncryptionKey()
+        await client.queryUsersAccess()
+        console.log("\n\n")
+        break;
+
+      case "testTwo":
         
         break;
       
@@ -142,21 +176,6 @@ async function main(){
         // await client.queryUsersAccess()
         // console.log("\n\n")
 
-        break;
-  
-  
-      case "push":
-        await client.push();
-        break;
-  
-      case "pull":
-        await client.pull();
-        break;
-  
-      case "clone":
-        // TO DO : check number of arguments
-        await client.cloneRepo(process.argv[3], process.argv[4]);
-        await simpleGit.pull("origin", branchName);
         break;
   
       default:
