@@ -17,17 +17,17 @@ var gateway, network, contract;
 async function setupGateway(){
     // 2.1 load the connection profile into a JS object
     let connectionProfile = yaml.safeLoad(fs.readFileSync(Constants.CONNECTION_PROFILE_PATH, 'utf8'));
-  
+
     // 2.2 Need to setup the user credentials from wallet
     const wallet = new FileSystemWallet(Constants.FILESYSTEM_WALLET_PATH);
-  
+
     // 2.3 Set up the connection options
     let connectionOptions = {
         identity: Constants.USER_ID,
         wallet: wallet,
         discovery: { enabled: false, asLocalhost: true }
     };
-  
+
     await gateway.connect(connectionProfile, connectionOptions);
 }
 
@@ -46,15 +46,15 @@ async function main(){
 
     let branchName = client.GotReader.getCurrentBranchName();
      
-  
+
     console.log("entered command: ", process.argv[2])
-  
+
     switch (process.argv[2]) {
       case "addRepo":
         await simpleGit.push("origin", branchName);
         await client.addRepo();
         break;
-        
+
       case "clone":
         // TO DO : check number of arguments
         await client.cloneRepo(process.argv[3], process.argv[4]);
@@ -64,9 +64,48 @@ async function main(){
       case "push":
         await client.push();
         break;
-  
+
       case "pull":
         await client.pull();
+        break;
+
+      case "user":
+        switch(process.argv[3]){
+          case "create":
+            if (process.argv.length == 5){
+              await client.createNewUser(process.argv[4])
+            } else if (process.argv.length == 7){
+              await client.createNewUser(process.argv[4], process.argv[5], process.argv[6])
+            }else {
+              console.log("Error! number of arguments did not match the expected for subcommand, expected: 5 or 7")
+            }
+            break;
+
+          case "username":
+            await client.changeUserName(process.argv[4])
+            break;
+
+          case "keys":
+            if (process.argv.length == 4){
+              await client.generateNewKeys()
+            } else if (process.argv.length == 6){
+              await client.generateNewKeys(process.argv[4], process.argv[5])
+            }else {
+              console.log("Error! number of arguments did not match the expected for subcommand, expected: 4 or 6")
+            }
+            break;
+
+          case "remove":
+            await client.removeUser()
+            break;
+
+          default:
+            console.log("sub Command not found: " + process.argv[3])
+        }
+      break;
+
+      case "queryRepo":
+        await client.queryRepo()
         break;
 
       case "testOne":
@@ -88,9 +127,9 @@ async function main(){
         break;
 
       case "testTwo":
-        
+
         break;
-      
+
       case "testUser":
         // testing user update messages
         console.log("Testing User Creation")
@@ -98,7 +137,7 @@ async function main(){
         await client.createNewUser("mickey", "Another PublickKey", "PrivateKey")
         await client.queryUserPublicKey("mickey")
         console.log("\n\n")
-        
+
         console.log("Testing UserName change")
         await client.changeUserName("NewMickey")
         await client.queryUserPublicKey("mickey")
@@ -119,7 +158,7 @@ async function main(){
 
         break;
 
-      
+
       case "testAccess":
         // testing user update messages
         console.log("Testing Adding Users and Repo")
@@ -150,7 +189,7 @@ async function main(){
         await client.queryUsersAccess()
         console.log("\n\n")
 
-        // // A01, 
+        // // A01,
         // // U02, U01,
         // console.log("Adding Read/Write")
         // await client.createNewUser("Admin@acme.com", "PP", "PP", false)
@@ -177,12 +216,12 @@ async function main(){
         // console.log("\n\n")
 
         break;
-  
+
       default:
         console.log("undefined command: ", process.argv, "  !");
     }
-  
+
     process.exit();
 }
-  
+
 main();
