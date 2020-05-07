@@ -39,15 +39,15 @@ async function main(){
     network = await gateway.getNetwork(Constants.NETWORK_NAME);
     contract = await network.getContract(Constants.CONTRACT_ID);
 
-    console.log("BEFORE CREATE CLIENT")
+    // console.log("BEFORE CREATE CLIENT")
     var client = new gotClient.Client(contract);
-    console.log("AFTER CREATE CLIENT")
+    // console.log("AFTER CREATE CLIENT")
     await client.loadCurrentRepo();
 
     let branchName = client.GotReader.getCurrentBranchName();
      
 
-    console.log("entered command: ", process.argv[2])
+    console.log("entered command: ", JSON.stringify(process.argv))
 
     switch (process.argv[2]) {
       case "addRepo":
@@ -104,8 +104,40 @@ async function main(){
         }
       break;
 
+      case "authorize":
+        if (process.argv.length == 5){
+          switch(process.argv[4]){
+            case "read-write":
+              await client.updateUserAccess(process.argv[3], gotClient.UserAccess.ReadWriteAccess)
+            break;
+
+            case "collaborator":
+              await client.updateUserAccess(process.argv[3], gotClient.UserAccess.CollaboratorAccess)
+            break;
+
+            case "owener":
+              await client.updateUserAccess(process.argv[3], gotClient.UserAccess.OwnerAccess)
+            break;
+
+            case "revoked":
+              await client.updateUserAccess(process.argv[3], gotClient.UserAccess.ReovkedAccess)
+            break;
+
+            default:
+              console.log("auhtorization type could not be matched: " + process.argv[4])
+          }
+
+        }else {
+          console.log("Error! number of arguments did not match the expected for subcommand, expected: 5")
+        }
+      break;
+
       case "queryRepo":
         await client.queryRepo()
+        break;
+
+      case "queryUsersAccess":
+        await client.queryUsersAccess()
         break;
 
       case "testOne":

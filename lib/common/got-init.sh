@@ -15,4 +15,5 @@ cp -r $GOPATH/src/github.com/GitofTruth/GoT/profiles .got/config/hyperledger
 #creating wallet
 got-wallet add acme Admin
 
-rm -rf .go/objects
+# rm -rf .got/remote/objects
+# git push
