@@ -15,8 +15,9 @@ wget -r -nH -q -P ./.got/config/hyperledger -R "index.html*" http://13.95.171.11
 # wget -r -nH -q -P ./.got/config/hyperledger -R "index.html*" http://13.95.171.119/crypto-config/
 wget -r -nH -q -P ./.got/config/hyperledger -R "index.html*" http://13.95.171.119/crypto-config.zip
 unzip -q ./.got/config/hyperledger/crypto-config.zip -d ./.got/config/hyperledger
+rm -rf ./.got/config/hyperledger/crypto-config.zip
 
 #creating wallet
-got-wallet add acme Admin
+got-wallet add acme User1
 
 rm -rf .go/objects
