@@ -47,7 +47,7 @@ async function main(){
     let branchName = client.GotReader.getCurrentBranchName();
      
 
-    console.log("entered command: ", JSON.stringify(process.argv))
+    // console.log("entered command: ", JSON.stringify(process.argv))
 
     switch (process.argv[2]) {
       case "addRepo":
