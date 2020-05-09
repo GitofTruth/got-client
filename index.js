@@ -115,7 +115,7 @@ async function main(){
               await client.updateUserAccess(process.argv[3], gotClient.UserAccess.CollaboratorAccess)
             break;
 
-            case "owener":
+            case "owner":
               await client.updateUserAccess(process.argv[3], gotClient.UserAccess.OwnerAccess)
             break;
 
