@@ -50,7 +50,6 @@ sudo npm install -g
 sudo chmod u+x *.sh
 ./add-ipfs.sh <linux-username>
 
-
 ```
 
 
