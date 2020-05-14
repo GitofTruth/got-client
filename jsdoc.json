@@ -13,6 +13,7 @@
       "recurse": true,
       "destination": "./docs/",
       "template": "./docs-templates/default",
-      "package": "./package.json"
+      "readme": "README.md"
+
     }
   }
