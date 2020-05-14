@@ -4,12 +4,12 @@
   "description": "provides client interface with GoT",
   "main": "index.js",
   "bin": {
-    "got-client": "./index.js",
+    "got-client": "./src/index.js",
     "got-wallet": "./lib/common/wallet.js",
     "got-init": "./lib/common/got-init.sh"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "doc": "jsdoc -c jsdoc.json"
   },
   "repository": {
     "type": "git",
@@ -31,6 +31,7 @@
     "ipfs-http-client": "^43.0.1",
     "is-stream": "^2.0.0",
     "js-yaml": "^3.13.1",
+    "jsdoc": "^3.6.4",
     "save-file": "^2.3.1",
     "shelljs": "^0.8.4",
     "simple-git": "^1.132.0"

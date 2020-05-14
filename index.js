@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+//@ts-check
 
 const fs = require('fs');
 const yaml = require('js-yaml');
@@ -14,6 +15,12 @@ const simpleGit = require('simple-git/promise')(Constants.REPO_PATH);
 
 var gateway, network, contract;
 
+/**
+ * Function for setting up the fabric network gateway.
+ * It reads certificates from the file system wallet and the connection profile yaml file
+ * and uses them to set up a connection with the fabric blockchain network.
+ * 
+ */
 async function setupGateway(){
     // 2.1 load the connection profile into a JS object
     let connectionProfile = yaml.safeLoad(fs.readFileSync(Constants.CONNECTION_PROFILE_PATH, 'utf8'));
@@ -31,7 +38,12 @@ async function setupGateway(){
     await gateway.connect(connectionProfile, connectionOptions);
 }
 
-
+/**
+ * Function acts as the main entry point for the GoT client.
+ * It provides an interface for the user to use the GoT functionalities 
+ * such as adding repos, pushing, pulling and cloning.
+ * 
+ */
 async function main(){
     gateway = new Gateway();
 
@@ -39,15 +51,12 @@ async function main(){
     network = await gateway.getNetwork(Constants.NETWORK_NAME);
     contract = await network.getContract(Constants.CONTRACT_ID);
 
-    // console.log("BEFORE CREATE CLIENT")
     var client = new gotClient.Client(contract);
-    // console.log("AFTER CREATE CLIENT")
     await client.loadCurrentRepo();
 
     let branchName = client.GotReader.getCurrentBranchName();
      
 
-    // console.log("entered command: ", JSON.stringify(process.argv))
 
     switch (process.argv[2]) {
       case "addRepo":
@@ -158,9 +167,7 @@ async function main(){
         console.log("\n\n")
         break;
 
-      case "testTwo":
 
-        break;
 
       case "testUser":
         // testing user update messages
