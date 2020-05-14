@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: lib/reader/GotReader.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: lib/reader/GotReader.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>#!/usr/bin/env node
+
+let repoPath = '.';
+let path = require('path');
+var USER_ID = 'user';
+const simpleGit = require('simple-git')(repoPath);
+const fs = require('fs');
+const gitlog = require('gitlog');
+const Constants = require('../common/constants')
+
+
+let branchesNames = [];
+let branchesContent = [];
+currentBranch = "master"
+
+repo = {};
+options =
+{
+  repo: repoPath
+  , branch: 'master'
+  , number: 100
+  , fields:
+    ['subject'
+      , 'authorName'
+      , 'committerName'
+      , 'authorDate'
+      , 'hash'
+      , 'parentHashes'
+    ]
+  , execOptions:
+  {
+    maxBuffer: 1000 * 1024,
+    status: false
+  }
+};
+
+/**
+ * Class for reading the repo data and its branches and their commit logs
+ */
+class GotReader {
+
+
+  constructor(branchName) {
+    currentBranch = branchName
+  }
+
+  branchLocalExec(e, d) {
+    branchesNames = d['all']
+    branchesContent = d['branches']
+
+    // console.log(branchesNames)
+
+    var branchObjs = {};
+    var hashObjs = {};
+    for (var branchInd = 0; branchInd &lt; branchesNames.length; branchInd++) {
+      options['branch'] = branchesNames[branchInd]
+      if (branchesContent[branchesNames[branchInd]]['current']) {
+        currentBranch = branchesNames[branchInd];
+      }
+      // console.log(options)
+      const commits = gitlog(options);
+      var commObjs = {};
+
+      // console.log(d)
+      // console.log(branchesNames[branchInd])
+      // console.log(branchesContent)
+      // console.log(commits)
+
+      for (var i = 0; i &lt; commits.length; i++) {
+        hashObjs[commits[i].hash] = {}
+        commObjs[commits[i].hash] = {
+          Message: commits[i].subject,
+          Author: commits[i].authorName,
+          Committer: commits[i].committerName,
+          CommitterTimestamp: toTimestamp(commits[i].authorDate),
+          Hash: commits[i].hash,
+          Parenthashes: [commits[i].parentHashes],
+          Signature: null
+        }
+      }
+
+      var newBranch = {
+        branchName: branchesNames[branchInd],
+        author: USER_ID,
+        timestamp: 1,
+        logs: commObjs
+      }
+      branchObjs[newBranch.branchName] = newBranch
+    }
+
+    repo = {
+      repoName: path.basename(path.resolve(process.cwd())),
+      author: USER_ID,
+      timeStamp: 0,
+      hashes: hashObjs,
+      branches: branchObjs
+    };
+
+    // console.log(USER_ID)
+    // console.log(repo)
+  }
+
+  changeRepoAuthor(userName){
+    USER_ID = userName
+  }
+
+  async loadCurrentRepo(userName) {
+    USER_ID = userName
+    // this.console.log()
+    await simpleGit.branchLocal(this.branchLocalExec);
+    // let e = {}
+    // let d = {}
+    // d["branches"] = []
+    // d["all"] = {}
+    // this.branchLocalExec(e,d)
+  }
+
+  getCurrentRemoteBranchHEAD() {
+    let rev = fs.readFileSync(Constants.REMOTE_PATH + 'HEAD').toString();
+    if (rev.indexOf(':') === -1) {
+      return rev;
+    } else {
+      // return fs.readFileSync(Constants.REMOTE_PATH + rev.substring(5)).toString();
+      let HEADBuffer = fs.readFileSync(Constants.REMOTE_PATH +'refs/heads/' + this.getCurrentBranchName() );
+      let HEADStr = HEADBuffer.toString('utf8').trim();
+      return HEADStr
+    }
+  }
+
+
+  async preparePushLog(remoteLastCommit) {
+
+    //re-check for logical errors
+
+    if(!remoteLastCommit)
+      remoteLastCommit = " "
+
+    options['branch'] = this.getCurrentBranchName()
+    var commits = gitlog(options);
+
+    var commObjs = []
+    for (var i = 0; i &lt; commits.length &amp;&amp; commits[i].hash != remoteLastCommit; i++) {
+      commObjs.push({
+        Message: commits[i].subject,
+        Author: commits[i].authorName,
+        Committer: commits[i].committerName,
+        CommitterTimestamp: toTimestamp(commits[i].authorDate),
+        Hash: commits[i].hash,
+        Parenthashes: [commits[i].parentHashes],
+        Signature: null
+      });
+    }
+
+    var pushlog = {
+      branchName: this.getCurrentBranchName(),
+      logs: commObjs
+    }
+
+    return pushlog
+  }
+
+
+  // to be set generic >>> stepOne  >>> Done
+  getCurrentBranchName() {
+    return currentBranch
+  }
+
+  getRepo() {
+    return repo
+  }
+
+  getAuthor() {
+    return repo['author']
+  }
+
+  getName() {
+    return repo['repoName']
+  }
+
+  getBranch(branchName) {
+    return repo['branches'][branchName]
+  }
+
+
+}
+
+function toTimestamp(strDate) {
+  var datum = Date.parse(strDate);
+  return datum / 1000;
+}
+
+
+module.exports = GotReader;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">GoT Client Documentation</a></h2><h3>Modules</h3><ul><li><a href="module-encryption.html">encryption</a></li><li><a href="module-ipfs-client.html">ipfs-client</a></li><li><a href="module-walk-git-tree.html">walk-git-tree</a></li></ul><h3>Classes</h3><ul><li><a href="Client.html">Client</a></li><li><a href="GotReader.html">GotReader</a></li><li><a href="GotStorage.html">GotStorage</a></li><li><a href="UserInfo.html">UserInfo</a></li></ul><h3>Global</h3><ul><li><a href="global.html#addToWallet">addToWallet</a></li><li><a href="global.html#exportIdentity">exportIdentity</a></li><li><a href="global.html#listIdentities">listIdentities</a></li><li><a href="global.html#main">main</a></li><li><a href="global.html#setupGateway">setupGateway</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.4</a> on Thu May 14 2020 23:49:48 GMT+0200 (Eastern European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

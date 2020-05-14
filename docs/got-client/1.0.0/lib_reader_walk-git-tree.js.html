@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: lib/reader/walk-git-tree.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: lib/reader/walk-git-tree.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Module for traversal of the Git Objects Tree
+ * @module walk-git-tree 
+ */
+const fs = require('fs');
+
+const Constants = require('../common/constants')
+
+const simpleGit = require('simple-git/promise')(Constants.REPO_PATH);
+
+
+/**
+ * Function that gets a list of all tree objects hashes under a certain tree hash
+ * @param {string} treeHash hash of a tree hash object
+ * @returns {Array&lt;string>} list of tree objects hashes 
+ */
+async function getTreeHashes(treeHash) {
+
+    let args = [ "-p", treeHash ];
+    let result = await simpleGit.catFile(args);
+
+    let treeHashes = [];
+
+    for (let i = 0; i &lt; result.length; i++) {
+        const c = result[i];
+        let hash = '';
+        if (i == 0) {
+
+            hash = result.substring(12, 52)
+            if (hash != '')
+                treeHashes.push(hash)
+        }
+        if (c == '\n') {
+
+            hash = result.substring(i + 13, i + 53)
+            if (hash != '')
+                treeHashes.push(hash)
+        }
+    }
+    // console.log(result.substring(12*2,12*2+40))
+    // console.log(treeHashes)
+    return treeHashes
+
+}
+
+/**
+ * Checks if a git object hash is a tree hash or not
+ * @param {string} hash git object hash
+ * @returns {boolean} true if tree hash and false otherwise
+ */
+async function isTreeHash(hash) {
+
+    let args = [
+        '-t',
+        hash
+    ];
+    let result = await simpleGit.catFile(args);
+    // console.log(result)
+    return (result.substring(0, 4) == "tree")
+}
+
+/**
+ * Checks if a git object hash is a commit hash or not
+ * @param {string} hash git object hash
+ * @returns {boolean} true if commit hash and false otherwise
+ */
+async function isCommitHash(hash) {
+
+    let args = [
+        '-t',
+        hash
+    ]
+    let result = await simpleGit.catFile(args)
+    // console.log(result)
+    return (result.substring(0, 6) == "commit")
+}
+
+/**
+ * Gets the root of the git objects tree of a certain commit
+ * @param {string} commitHash git commit object hash
+ * @returns {string} commit tree root hash
+ */
+async function getCommitTreeHash(commitHash) {
+
+    let args = [
+        '-p',
+        commitHash
+    ]
+    let result = await simpleGit.catFile(args)
+
+    return result.substring(5, 45)
+}
+
+
+/**
+ * Function that takes a commit hash and traverses the git tree recursively
+ * to get a list of all git objects hashes under this commit hash 
+ * @param {string} inputHash - commit hash which points to the Git tree root 
+ * @param {Array&lt;string>} allCommitObjectsHashes - a list of all objects hashes 
+ * @returns {void}
+ */
+async function getCommitObjectsHashes(inputHash, allCommitObjectsHashes) {
+
+    var treeHash = '';
+
+
+    if (await isCommitHash(inputHash))
+        {
+            allCommitObjectsHashes.push(inputHash)
+            treeHash = await getCommitTreeHash(inputHash);
+        }
+    else
+        treeHash = inputHash
+
+
+    allCommitObjectsHashes.push(treeHash)
+
+    var treeHashes = await getTreeHashes(treeHash);
+
+    await Promise.all(treeHashes.map(async (hash) => {
+        allCommitObjectsHashes.push(hash)
+        // console.log(hash)
+        let isTree = await isTreeHash(hash)
+        if (isTree) {
+            // console.log(hash)
+           await getCommitObjectsHashes(hash, allCommitObjectsHashes)
+        }
+    }));
+
+
+
+    return
+
+
+}
+
+module.exports = {
+    getCommitObjectsHashes
+}
+
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">GoT Client Documentation</a></h2><h3>Modules</h3><ul><li><a href="module-encryption.html">encryption</a></li><li><a href="module-ipfs-client.html">ipfs-client</a></li><li><a href="module-walk-git-tree.html">walk-git-tree</a></li></ul><h3>Classes</h3><ul><li><a href="Client.html">Client</a></li><li><a href="GotReader.html">GotReader</a></li><li><a href="GotStorage.html">GotStorage</a></li><li><a href="UserInfo.html">UserInfo</a></li></ul><h3>Global</h3><ul><li><a href="global.html#addToWallet">addToWallet</a></li><li><a href="global.html#exportIdentity">exportIdentity</a></li><li><a href="global.html#listIdentities">listIdentities</a></li><li><a href="global.html#main">main</a></li><li><a href="global.html#setupGateway">setupGateway</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.4</a> on Thu May 14 2020 23:49:48 GMT+0200 (Eastern European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

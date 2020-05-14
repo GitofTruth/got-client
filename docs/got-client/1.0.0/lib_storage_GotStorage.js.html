@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: lib/storage/GotStorage.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: lib/storage/GotStorage.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>#!/usr/bin/env node
+
+const path = require('path');
+
+const ipfsClient = require('./ipfs-client');
+
+const Constants = require('../common/constants')
+
+var remoteObjs = ".got/remote/objects"
+var defStoragePath = Constants.REMOTE_PATH + "objects"
+var excptList = ["info", "pack"]
+
+const fs = require('fs');
+
+
+var rmdir = function (dir) {
+
+  if (fs.existsSync(dir)) {
+    var list = fs.readdirSync(dir);
+    for (var i = 0; i &lt; list.length; i++) {
+      var filename = path.join(dir, list[i]);
+      var stat = fs.statSync(filename);
+
+      if (filename == "." || filename == "..") {
+        // pass these files
+      } else if (stat.isDirectory()) {
+        // rmdir recursively
+        rmdir(filename);
+      } else {
+        // rm fiilename
+        fs.unlinkSync(filename);
+      }
+    }
+
+    fs.rmdirSync(dir);
+  }
+};
+
+/**
+ * A class for interacting with the ipfs client and handling git objects 
+ */
+
+class GotStorage {
+  // localStoragePath = "";
+  // remoteRepoPath = "";
+
+ /**
+  * Creates new instance of the GotStorage class
+  */
+  constructor() {
+  }
+
+
+
+  ListFiles(testFolder) {
+    let files = []
+    fs.readdirSync(testFolder).forEach(file => {
+      if (excptList.indexOf(file) > -1) {
+      } else {
+        files = [...files, file]
+        // console.log(file);
+      }
+    });
+
+    return files
+  }
+
+
+  GetObjectsName(objHomeDirectory) {
+    let names = []
+    let files = []
+    let dirs = this.ListFiles(objHomeDirectory)
+    dirs.forEach(d => {
+      files = this.ListFiles(objHomeDirectory + d + "/")
+      files.forEach(f => {
+        names = [...names, d + f]
+      })
+    })
+
+    return names;
+  }
+
+  /**
+   * Prepares a list of the git objects local paths
+   * @param {Array&lt;string>} logsHashes  list of objects hashes 
+   * @returns {Array&lt;string>} list of objects paths
+   */
+  prepareObjectsPath(logsHashes) {
+    let gotObjectsPaths = []
+    logsHashes.forEach(logHash => {
+
+      let objectName = logHash.substring(2, logHash.length)
+      let objectDirectory = logHash.substring(0, 2)
+
+      let objectPath = path.join(Constants.REMOTE_PATH+"objects", objectDirectory, objectName)
+
+      gotObjectsPaths.push(objectPath)
+
+    });
+
+    return gotObjectsPaths
+
+  }
+
+  async InitializeObjectsIPFS(objectsPath = defStoragePath) {
+    console.log("Adding to ipfs cluster")
+
+    let directoryCID = await ipfsClient.addAllGitObjects(objectsPath)
+    console.log("directoryCID " + directoryCID)
+    console.log("Added to ipfs  cluster")
+    return directoryCID
+  }
+
+
+
+  async InitializeObjectsLocal(directoryCID, objectsPath = defStoragePath) {
+
+    rmdir(objectsPath)
+    console.log("Getting from ipfs cluster")
+    await ipfsClient.getAllGitObjects(directoryCID, objectsPath)
+    console.log(process.cwd())
+    console.log("Retrieved from ipfs cluster")
+    // try {
+    //   fs.renameSync('./.got/' + directoryCID, objectsPath)
+    //   console.log("Successfully renamed the directory.")
+    // } catch(err) {
+    //   console.log(err)
+    // }
+
+  }
+
+
+  /**
+   * Uploads multiple git objects to IPFS Cluster
+   * @param {Array&lt;string>} objectsHashes - list of objects hashes to upload to IPFS
+   * @param {string} symmetricKey - the key used to encrypt the git objects
+   */
+  async UploadObjects(objectsHashes, symmetricKey) {
+
+    let gotObjectsPaths = this.prepareObjectsPath(objectsHashes)
+
+    // console.log("gotObjectsPaths = " + gotObjectsPaths)
+
+    // upload objects
+    let hashCIDMap = await ipfsClient.addFilesCluster(gotObjectsPaths, symmetricKey)
+
+    return hashCIDMap
+  }
+
+
+  /**
+   * Download multiple git objects from IPFS
+   * @param {Object.&lt;string,string>} objectsMap a dictionary of objects paths (key) and objects IPFS CIDs (value)
+   * @param {string} symmetricKey key used to decrypt the git objects
+   */
+  async DownloadObjects(objectsMap, symmetricKey) {
+
+    await ipfsClient.getFilesIPFS(objectsMap, symmetricKey);
+
+    return
+
+  }
+
+
+
+
+  // if true updates .got
+  // if true: copy files from nodeStorage to remote (.got) >> updateStorage()
+  async CopyObjects(namesList = [], pulling, sourcePath = defStoragePath) {
+    let destinationPath = remoteObjs
+    let directoryCID;
+    if (!pulling) {
+      let temp = sourcePath
+      sourcePath = destinationPath
+      destinationPath = temp
+
+      // console.log("Here pulling!")
+      console.log("Adding to ipfs cluster")
+      directoryCID = await ipfsClient.addAllGitObjects("./.git/objects")
+      console.log("Added to ipfs cluster")
+    }
+    //  else {
+
+    // }
+
+
+
+    // if(!pulling)
+    //   {
+
+    //   }else{
+    //   }
+
+
+    console.log("Starting copying files ... to storage")
+    console.log("The source Path: " + sourcePath)
+    console.log("The destination Path: " + destinationPath)
+    let sourceObjs = this.GetObjectsName(sourcePath)
+    let destinationObjs = this.GetObjectsName(destinationPath)
+    let missing = []
+
+    if (namesList.length &lt;= 0) {
+      namesList = sourceObjs
+    }
+
+    if (namesList.length > 0) {
+      namesList.forEach(n => {
+        if (destinationObjs.indexOf(n) == -1) {
+          missing = [...missing, n]
+        }
+      })
+    } else {
+      missing = namesList
+    }
+
+    console.log("Found source Objects: ")
+    console.log(sourceObjs)
+    console.log("Found destination objects Objects: ")
+    console.log(destinationObjs)
+    console.log("Missing destination Objects: ")
+    console.log(missing)
+
+    missing.forEach(m => {
+      if (!fs.existsSync(destinationPath + m.substring(0, 2))) {
+        fs.mkdirSync(destinationPath + m.substring(0, 2));
+      }
+      if (!fs.existsSync(destinationPath + m.substring(0, 2) + "/" + m.substring(2))) {
+        fs.copyFileSync(sourcePath + m.substring(0, 2) + "/" + m.substring(2), destinationPath + m.substring(0, 2) + "/" + m.substring(2)
+          // , (err) => {
+          // if (err) throw err;
+          // console.log(m + " was added to bare repo");
+          // }
+        );
+      }
+    })
+    console.log("Done copying files ... to storage\n\n")
+
+    return directoryCID;
+  }
+
+
+}
+module.exports = GotStorage;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">GoT Client Documentation</a></h2><h3>Modules</h3><ul><li><a href="module-encryption.html">encryption</a></li><li><a href="module-ipfs-client.html">ipfs-client</a></li><li><a href="module-walk-git-tree.html">walk-git-tree</a></li></ul><h3>Classes</h3><ul><li><a href="Client.html">Client</a></li><li><a href="GotReader.html">GotReader</a></li><li><a href="GotStorage.html">GotStorage</a></li><li><a href="UserInfo.html">UserInfo</a></li></ul><h3>Global</h3><ul><li><a href="global.html#addToWallet">addToWallet</a></li><li><a href="global.html#exportIdentity">exportIdentity</a></li><li><a href="global.html#listIdentities">listIdentities</a></li><li><a href="global.html#main">main</a></li><li><a href="global.html#setupGateway">setupGateway</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.4</a> on Thu May 14 2020 23:49:48 GMT+0200 (Eastern European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

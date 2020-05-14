@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: lib/common/encryption.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: lib/common/encryption.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>#!/usr/bin/env node
+/**
+ * Module for handling encryption and decryption of repos 
+ * @module encryption
+ */
+
+var crypto = require('crypto');
+// import * as cryptp from 'crypto'
+
+// variables
+var algorithm = 'aes256';
+var inputEncoding = 'utf8';
+var outputEncoding = 'hex';
+var ivlength = 16;
+
+
+// generation key pairs
+function generateEncPair(){
+    const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa',
+    {
+            modulusLength: 4096,
+            namedCurve: 'secp256k1',
+            publicKeyEncoding: {
+                type: 'spki',
+                format: 'pem'
+            },
+            privateKeyEncoding: {
+                type: 'pkcs8',
+                format: 'pem',
+                cipher: 'aes-256-cbc',
+                passphrase: "passphrase"
+            }
+    });
+
+    // writeFileSync('private.pem', privateKey)
+    // writeFileSync('public.pem', publicKey)
+
+    return [privateKey, publicKey]
+}
+
+function generateSymKey(){
+    var secret = 'ciw7p02f70000ysjon7gztjn7'
+    var key = crypto.createHash('sha256').update(String(secret)).digest('base64').substr(0, 32);
+    return key
+}
+
+
+
+function createNewSymmetricKeyAnnouncement(usersKey, privateKey, encKey = null){
+    if (encKey == null){
+        encKey = generateSymKey()
+    }
+    var announcement = {}
+    announcement.KeyHash = crypto.createHash('sha256').update(encKey).digest('base64');
+    announcement.encryptedKeys = {}
+    for (let userName in usersKey){
+        //announcement.encryptedKeys[userName] = thresholdDec(encKey, usersKey.values, privateKey)
+        announcement.encryptedKeys[userName] = encryptDate(encKey, usersKey[userName])
+    }
+
+    return announcement
+}
+
+
+// sign
+function signData(data, privateKey) {
+
+}
+
+
+// verify
+function verifySignature(signedData, publicKey) {
+
+}
+
+
+// thresholdEncryption
+// encrypt
+function encryptDate(data, publicKey){
+    // return data+":"+publicKey
+    return data
+}
+
+function decryptDate(data , privateKey){
+    // return string(data).substring(0, data.indexOf(':'))
+    return data
+}
+
+
+function thresholdEnc(data, publicKeys, privateKey) {
+    var buffer = new Buffer(data);
+    var encrypted = crypto.publicEncrypt(publicKeys[0], buffer);
+    return encrypted.toString("base64");
+}
+
+
+
+// decrypt
+function thresholdDec(encData, publicKeys, privateKey) {
+    var buffer = new Buffer(encData, "base64");
+    //var decrypted = crypto.privateDecrypt(privateKey, buffer);
+    const decrypted = crypto.privateDecrypt(
+        {
+            key: privateKey.toString(),
+            passphrase: passphrase,
+        },
+        buffer,
+    )
+    return decrypted.toString("utf8");
+}
+
+
+// symmetric encryption
+// encrypt
+function symmetricEnc(data, symmetricKey = generateSymKey()) {
+    var iv = crypto.randomBytes(ivlength);
+    var cipher = crypto.createCipheriv(algorithm, symmetricKey, iv);
+    var ciphered = cipher.update(data, inputEncoding, outputEncoding);
+    ciphered += cipher.final(outputEncoding);
+    var ciphertext = iv.toString(outputEncoding) + ':' + ciphered
+
+    return ciphertext
+}
+
+
+// decrypt
+function symmetricDec(encData, symmetricKey = generateSymKey()) {
+    var components = encData.split(':');
+    var iv_from_ciphertext = Buffer.from(components.shift(), outputEncoding);
+    var decipher = crypto.createDecipheriv(algorithm, symmetricKey, iv_from_ciphertext);
+    var deciphered = decipher.update(components.join(':'), outputEncoding, inputEncoding);
+    deciphered += decipher.final(inputEncoding);
+
+    return deciphered
+}
+
+
+// testing threshold encryption
+
+
+// testing symmetric encryption
+// var text = "Mickey is good personss"
+// var symEncKey = generateSymKey()
+// var cipher = symmetricEnc(text, symEncKey)
+// var newText = symmetricDec(cipher, symEncKey)
+
+// console.log(symEncKey)
+// console.log(cipher)
+// console.log(newText)
+
+// console.log(symmetricDec(symmetricEnc(text)))
+
+module.exports ={
+    generateEncPair,
+    generateSymKey,
+
+    createNewSymmetricKeyAnnouncement,
+
+    signData,
+    verifySignature,
+
+    encryptDate,
+    decryptDate,
+
+    thresholdEnc,
+    thresholdDec,
+
+    symmetricEnc,
+    symmetricDec
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">GoT Client Documentation</a></h2><h3>Modules</h3><ul><li><a href="module-encryption.html">encryption</a></li><li><a href="module-ipfs-client.html">ipfs-client</a></li><li><a href="module-walk-git-tree.html">walk-git-tree</a></li></ul><h3>Classes</h3><ul><li><a href="Client.html">Client</a></li><li><a href="GotReader.html">GotReader</a></li><li><a href="GotStorage.html">GotStorage</a></li><li><a href="UserInfo.html">UserInfo</a></li></ul><h3>Global</h3><ul><li><a href="global.html#addToWallet">addToWallet</a></li><li><a href="global.html#exportIdentity">exportIdentity</a></li><li><a href="global.html#listIdentities">listIdentities</a></li><li><a href="global.html#main">main</a></li><li><a href="global.html#setupGateway">setupGateway</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.4</a> on Thu May 14 2020 23:49:48 GMT+0200 (Eastern European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
