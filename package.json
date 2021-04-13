@@ -26,7 +26,7 @@
     "bl": "^4.0.2",
     "current-git-branch": "^1.1.0",
     "fabric-network": "^1.4.7",
-    "gitlog": "^3.2.0",
+    "gitlog": "^4.0.4",
     "ipfs-cluster-api": "0.0.9",
     "ipfs-http-client": "^43.0.1",
     "is-stream": "^2.0.0",
